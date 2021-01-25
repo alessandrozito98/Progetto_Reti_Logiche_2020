@@ -3,6 +3,7 @@
 ## Authors
 
 887630 Giuseppe Serra (@pepser) giuseppe.serra@mail.polimi.it
+
 890219 Alessandro Zito (@alessandrozito98) alessandro4.zito@mail.polimi.it
 
 Description of the project can be found [here]().
