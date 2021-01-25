@@ -45,7 +45,7 @@ ARCHITECTURE Behavioral OF project_reti_logiche IS
 	IDLING,
 	READ_ROW,
 	READ_COLUMN,
-	NUMBER_OF_PIXEL,
+	SET_NUMBER_OF_PIXEL,
 	SET_MAX_AND_MIN,
 	READ_PIXEL,
 	SET_SHIFT_LEVEL,
@@ -112,10 +112,10 @@ BEGIN
 					WHEN READ_COLUMN =>
 						temp_value <= i_data;
 						o_address <= "0000000000000010";
-						curr_state <= NUMBER_OF_PIXEL;
+						curr_state <= SET_NUMBER_OF_PIXEL;
 						
 						
-					WHEN NUMBER_OF_PIXEL =>
+					WHEN SET_NUMBER_OF_PIXEL =>
 						number_of_byte <= std_logic_vector(unsigned(helper) * unsigned(temp_value));
 						curr_state <= SET_MAX_AND_MIN;
 						
