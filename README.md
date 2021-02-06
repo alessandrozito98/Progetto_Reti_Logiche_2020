@@ -14,5 +14,5 @@ Specific document can be found [here](https://en.wikipedia.org/wiki/Histogram_eq
 
 The component required had to receive a 8-bit pixels of an image as input and calculate the new pixel value by following the specifications in "Histogram Equalitazion" method.
 
-*This project has been developed as part of the "Reti Logiche" course at [Politecnico di Milano](https://www.polimi.it/).* <!--- It has been evaluated "29/30".-->
+*This project has been developed as part of the "Reti Logiche" course at [Politecnico di Milano](https://www.polimi.it/).* It has been evaluated "30/30" cum Laude.
 
