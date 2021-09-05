@@ -2,11 +2,11 @@
 
 ## Authors
 
-887630 Giuseppe Serra ([@pepser](https://github.com/pepser)) giuseppe.serra@mail.polimi.it
+887630 Giuseppe Serra ([@pepser](https://github.com/pepser)) giuseppe.serra@mail.polimi.it mailto:giuseppe.serra@mail.polimi.it
 
 890219 Alessandro Zito ([@alessandrozito98](https://github.com/alessandrozito98)) alessandro4.zito@mail.polimi.it
 
-Description of the project can be found [here]().
+Description of the project can be found [here](https://github.com/alessandrozito98/Progetto_Reti_Logiche_2020/tree/master/Docs).
 
 Specific document can be found [here](https://en.wikipedia.org/wiki/Histogram_equalization).
 
