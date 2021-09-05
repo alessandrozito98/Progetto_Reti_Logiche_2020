@@ -42,4 +42,5 @@ signal RAM: ram_type := (0 => std_logic_vector(to_unsigned(  2  , 8)),
 
 The testing platform was divided in public and private tests. Public tests can be found here. The results of some public tests is written in the final report.
 
-However, i also tested my program using a test generator written by me and other students. The original repo can be found [here](https://github.com/davidemerli/RL-generator-2020-2021). There is also a test generator written by another supervisor, called Fabio Salice that i not used. You can find it [here](https://github.com/alessandrozito98/Progetto_Reti_Logiche_2020/tree/master/Public%20Tests/Testbench%20Generator).
+However, i also tested my program using a test generator written by me and other students. The original repo can be found [here](https://github.com/davidemerli/RL-generator-2020-2021). 
+There is also a test generator written by another supervisor, called Fabio Salice that I didn't used. You can find it [here](https://github.com/alessandrozito98/Progetto_Reti_Logiche_2020/tree/master/Public%20Tests/Testbench%20Generator).
