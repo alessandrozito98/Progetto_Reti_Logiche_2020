@@ -16,3 +16,5 @@ The component required had to receive a 8-bit pixels of an image as input and ca
 
 *This project has been developed as part of the "Reti Logiche" course at [Politecnico di Milano](https://www.polimi.it/).* It has been evaluated "30/30" cum Laude.
 
+### Input Format
+The program expects its input from stdio with the following format.
