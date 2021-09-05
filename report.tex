@@ -1,0 +1,338 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% University/School Laboratory Report
+% LaTeX Template
+% Version 3.1 (25/3/14)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Linux and Unix Users Group at Virginia Tech Wiki 
+% (https://vtluug.org/wiki/Example_LaTeX_chem_lab_report)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{appendix}
+\usepackage{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{siunitx} % Provides the \SI{}{} and \si{} command for typesetting SI units
+\usepackage{graphicx} % Required for the inclusion of images
+\usepackage{natbib} % Required to change bibliography style to APA
+\usepackage{amsmath} % Required for some math elements 
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{pdfpages}
+
+\usetikzlibrary{arrows,automata, positioning}
+
+\usepackage{import}
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+%\renewcommand{\labelenumi}{\alph{enumi}.} % Make numbering in the enumerate environment by letter rather than number (e.g. section 6)
+
+%\usepackage{times} % Uncomment to use the Times New Roman font
+
+%----------------------------------------------------------------------------------------
+%	DOCUMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\title{Prova Finale di Reti Logiche} % Title
+\author{Giuseppe Serra \\ Alessandro Zito} % Author name
+\date{A. A. 2020-21}
+
+\begin{document}
+\maketitle % Insert the title, author and date
+\begin{center}
+\begin{tabular}{l r}
+Matricole: & 887630 - 890219\\ % Partner names
+Codici Persona: & 10566090 - 10617579\\
+Docente: & Gianluca Palermo % Instructor/supervisor
+\end{tabular}
+\end{center}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+
+% If you wish to include an abstract, uncomment the lines below
+% \begin{abstract}
+% Abstract text
+% \end{abstract}
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+
+
+
+
+\section{Requisiti del Progetto}
+
+
+La specifica della Prova finale (Progetto di Reti Logiche) 2020 è ispirata al metodo di \textbf{equalizzazione dell’istogramma di una immagine.}
+Il metodo di equalizzazione dell’istogramma di una immagine è un metodo pensato per ricalibrare il contrasto di una immagine quando l ’intervallo dei valori di intensità sono molto vicini effettuandone una distribuzione su tutto l’intervallo di intensità, al fine di incrementare il contrasto. Al componente viene richiesto di:
+\begin{enumerate}
+\item Accedere ai primi due indirizzi della RAM per leggere i byte dell'immagine (indirizzo $0$ per le colonne e $1$ per le righe). La dimensione massima di un'immagine è 128x128 pixel.
+\item Leggere ogni pixel dell'immagine
+\item Calcolare il nuovo valore del pixel.
+\item Scrivere il risultato nella memoria RAM, e rifare lo stesso processo dal punto 4 per tutti i pixel dell'immagine.
+\end{enumerate}
+
+Inoltre, l'implementazione deve essere in grado di gestire un segnale di Reset. Per l'implementazione si è scelto di supporre il Reset asincrono rispetto al segnale di clock.
+
+L'implementazione deve essere poi sintetizzata con target FPGA xc7a200tfbg484-1.
+
+\subsection{Esempio}
+
+
+
+\subsection{Ipotesi Progettuali}
+\label{ipotesi}
+Si sono supposti veri i seguenti fatti:
+\begin{enumerate}
+\item Il nuovo valore del pixel di un massimo di 8 bit.
+\item L'immagine non può essere di 0 pixel.
+\item Il programma è sintetizzato in modo da poter codificare più immagini mantenendo i vincoli di RESET imposti dalla specifica. 
+\end{enumerate}
+ 
+%----------------------------------------------------------------------------------------
+%	SECTION 2
+%----------------------------------------------------------------------------------------
+
+\section{Implementazione}
+
+L'architettura è stata progettata in maniera modulare, in modo da specializzare i singoli componenti creati e separare le funzionalità
+di calcolo della codifica dell'indirizzo dalla gestione della macchina a stati finiti.
+
+
+\subsection{Descrizione ad Alto Livello}
+\label{alto_livello}
+
+Da un'ottica di alto livello, l'implementazione esegue i seguenti passi:
+
+\begin{enumerate}
+\item Legge il primo indirizzo e salva il numero delle colonne delle immagini
+\item Legge il secondo indirizzo e salva il numero delle righe delle immagini
+\item Calcola il numero dei byte dell'immagine
+\item Legge ogni pixel dell'immagine e controlla se è il pixel con valore più grande o più piccolo dell'immagine:
+    \begin{enumerate}
+        \item Se sì, salva il valore in \textit{max\_pixel\_value} o \textit{min\_pixel\_value}
+        \item Se no, legge il pixel successivo.
+    \end{enumerate}
+\item Calcola la differenza tra il pixel con valore maggiore e pixel con valore minore (\textit{delta\_value}).
+\item Calcola il numero di bit da shiftare con la seguente formula:
+
+    \begin{equation}
+        shift\_level = Floor(\log_2(delta\_value + 1)
+    \end{equation}
+    
+    Il seguente calcolo è stato effettuato tramite un controllo a soglia iterando sulla potenza di 2.
+
+\item Si prende il valore del pixel e lo si shifta di shift\_level e codifica il numero a 16 bit aggiungendo "$00000000$" in coda:
+\begin{enumerate}
+    \item Se il numero è minore di 255, Carica il risultato nella RAM codificato a 8 bit;
+    \item Altrimenti, carica nella RAM "$11111111$".
+\end{enumerate}
+
+
+\item Ripete i passaggi dal 7 in poi per tutti i pixel da leggere.
+\item Si aggiornano tutti i bit di comando.
+\end{enumerate}
+
+Per gestire questo algoritmo si è scelta un'implementazione costituita da una macchina a stati finiti, che rappresenta il top-level component
+e che gestisce tutto il processo di equalizzazione dell'immagine.
+
+
+\subsection{Macchina a Stati Finiti}
+\label{FSM}
+
+La \textbf{Macchina a Stati Finiti} (FSM) è stata realizzata con specifica \textit{Behavioural} 
+Segue una descrizione degli stati formali della FSM:
+
+\begin{itemize}
+\item \texttt{RESET}: Stato di idle in cui si posiziona la FSM al reset della computazione. La macchina aspetta che venga asserito il segnale \texttt{i\_start}.
+\item \texttt{READ\_COLUMN}: Stato in cui viene letta la colonna dell'immagine
+\item \texttt{READ\_ROW}: Stato in cui viene letta la riga dell'immagine.
+\item \texttt{NUMBER\_OF\_BYTE}: Stato in cui si calcolano il numero di byte dell'immagine
+\item \texttt{CALC\_MAX\_AND\_MIN}: Stato in cui vengono letti tutti i pixel e vengono trovati il pixel più grande e più piccolo
+\item \texttt{READ\_PIXEL}: Stato in cui si aspetta un ciclo di clock per leggere un pixel e ritornare nello stato di calcolo di massimo e minimo 
+\item \texttt{CALC\_SHIFT\_LEVEL}: Stato in cui si calcola lo \textit{shift\_level}
+\item \texttt{READ\_PIXEL\_VALUE}: Stato in cui, dopo aver calcolato lo shift\_level, si ricominciano a leggere i valori dei pixel dell'immagine; se il contatore ausiliare è uguale al numero di byte, si va allo stato finale, altrimenti, si calcola il valore del pixel shiftato.
+\item \texttt{SET\_NEW\_PIXEL\_VALUE}: Stato in cui viene calcolato il valore temporaneo del pixel e codificato in 16 bit.
+\item \texttt{SHIFT\_NEW\_PIXEL\_VALUE}: Stato in cui viene shiftato il nuovo valore temporaneo del pixel ottenendo quindi il valore finale; viene poi settato \textbf{o\_we} a $1$ per scrivere.
+\item \texttt{WRITE\_NEW\_PIXEL\_VALUE}: Stato in cui viene scritto il nuovo valore del pixel sulla RAM sul suo indirizzo \textbf{o\_address} di uscita che vale esattamente \textit{o\_address = count + 2 + number\_of\_byte}.
+\item \texttt{WAIT\_READ}: Stato in cui si aspetta un ciclo di clock per settare l'indirizzo di lettura uguale a count + 3 e settare \textbf{o\_we = 0}, per tornare a READ\_PIXEL\_VALUE
+\item \texttt{FINALIZE}: Stato in cui si aspetta che \texttt{i\_start} venga portato giù, settando \texttt{o\_done} a 1 e riportandosi allo stato di \texttt{RESET}.
+\end{itemize}
+
+Più precisamente l'insieme degli stati della FSM dovrebbe comprendere almeno anche il counter \texttt{count}, che viene usato prima come contatore per leggere tutti gli stati di lettura dei pixel, poi viene utilizzato per il calcolo del logaritmo in base 2 per lo shift\_level e, infine, per gli indirizzi di lettura e scrittura sulla RAM.
+
+
+Nella figura a seguito è riportato il disegno dell'automa. Sono state usate le seguenti abbreviazioni degli stati per chiarezza:\\
+
+\begin{center}
+\begin{tabular}{ll}
+\texttt{RESET}: & \texttt{RST} \\
+\texttt{IDLING}: & \texttt{IDLE} \\
+\texttt{READ\_COLUMN}: & \texttt{RD\_RC} \\
+\texttt{READ\_ROW}: & \texttt{RD\_RW} \\
+\texttt{SET\_NUMBER\_OF\_PIXEL}: & \texttt{SET\_NUM\_PX} \\
+\texttt{SET\_MAX\_AND\_MIN} (With \texttt{WZ\_COUNT=i}): & \texttt{MAX\_E\_MIN} \\
+\texttt{READ\_PIXEL} (With \texttt{COUNT=i}): & \texttt{READ\_PX} \\
+\texttt{SET\_SHIFT\_LEVEL}: & \texttt{SHIFT} \\
+\texttt{READ\_PIXEL\_VALUE}: & \texttt{READ\_NEW\_PX} \\
+\texttt{SET\_NEW\_PIXEL\_VALUE}: & \texttt{SET\_NEW\_PX} \\
+\texttt{SHIFT\_NEW\_PIXEL\_VALUE}: & \texttt{SHIFT\_NEW\_PX} \\
+\texttt{WRITE\_NEW\_PIXEL\_VALUE}: & \texttt{WRITE\_NEW\_PX} \\
+\texttt{WAIT\_READ}: & \texttt{WAIT\_READ} \\
+\texttt{FINALIZE}: & \texttt{END} \\
+\end{tabular}
+\end{center}
+
+
+\begin{figure}
+\centering
+\resizebox{!}{0.95\textheight}{%
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.5cm,
+                    semithick, initial where=above]
+
+  \tikzstyle{every state} = [font=\small, inner sep = 1pt, minimum size= 50pt]
+  \node[state] 		   	(A)                    	{\texttt{RST}};
+  \node[state]			(B)	[below of = A]		{\texttt{IDLE}};
+  \node[state] 			(C) [below of = B] 	  	{\texttt{RD\_RC}};
+  \node[state]         	(D) [below of = C] 	  	{\texttt{RD\_RW}};
+  \node[state]         	(E) [below of = D] 	  	{\texttt{SET\_NUM\_PX}};
+  \node[state]         	(F) [below of = E]      {\texttt{MAX\_MIN}};
+  \node[state]         	(G) [left = 2cm of F]  	{\texttt{READ\_PX}};
+  \node[state]         	(H) [below of = F]      {\texttt{SHIFT}};
+  \node[state]         	(I) [below of = H]      {\texttt{READ\_NEW\_PX}};
+  \node[state]         	(J) [below of = I]     	{\texttt{SET\_NEW\_PX}};
+  \node[state]         	(K) [below of = J]		{\texttt{SHIFT\_NEW\_PX}};
+  \node[state]         	(L) [left = 3cm of K] 	{\texttt{WR\_NEW\_PX}};
+  \node[state]         	(M) [left = 3cm of I]	{\texttt{WAIT\_READ}};
+  \node[state]         	(N) [right = 6cm of I]	{\texttt{END}};
+
+
+  \path (A) edge              		node {} (B)
+  		(B) edge 	[loop left] 	node [pos=0.5]{\texttt{I\_START=0}} (B)
+        (B) edge              		node [pos=0.5]{\texttt{I\_START=1}} (C)
+        (C) edge              		node {} (D)
+        (D) edge 			  		node {} (E)
+        (E) edge					node {} (F)
+        (F) edge 	[bend left=45] 	node {} (G)
+        (G) edge	[bend left=45]	node {} (F)
+        (F) edge			  		node [pos=0.5]{\texttt{COUNT = NUM\_OF\_BYTE}} (H)
+        (H) edge			  		node {} (I)
+        (I) edge			  		node {} (J)
+        (J) edge					node {} (K) 
+        (K)	edge	[bend left=45]	node {}	(L)
+        (L) edge			  		node {} (M)
+        (M)	edge 	[bend left=45]	node {}	(I)
+        (I)	edge 					node [pos=0.5]{\texttt{COUNT = NUM\_OF\_BYTE}}	(N)
+        (N) edge	[bend right]	node [pos=0.2]{\texttt{I\_START=0}} (A);
+        
+        
+\end{tikzpicture}
+}
+\end{figure}
+\captionof{figure}{Diagramma degli stati della Macchina a Stati Finiti}
+
+\newpage
+
+
+
+\subsection{Schema dell'Implementazione}
+\label{schema}
+
+\vspace*{1cm}
+
+% Your image goes here
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.4]{schematic.png}
+    \caption{Schema dell'implementazione}
+    \label{fig:schematic}
+\end{figure}
+
+
+
+%----------------------------------------------------------------------------------------
+%	SECTION 3
+%----------------------------------------------------------------------------------------
+
+\section{Test Benches}
+\label{test}
+
+I test effettuati hanno cercato di effettuare transizioni critiche oppure di verificare possibili configurazioni di memoria estreme. In particolare sono stati creati dei testbench
+comprendenti le seguenti situazioni:
+
+\begin{itemize}
+\item Vari test generati casualmente tramite un generatore di immagini in python sia quadrate che rettangolari.
+\item Caso specifico in cui tutti i pixel sono dello stesso valore
+\item Caso specifico con \textit{min\_pixel\_value} = 0 e \textit{max\_pixel\_value} = 255
+\item Vari test casuali con più immagini da equalizzare dentro un unico test.
+\end{itemize}
+
+Questi test hanno evidenziato alcune criticità nel codice iniziale e hanno guidato lo sviluppo della soluzione fino alla sua versione finale.\\
+
+Per tutti i test riportati e i test successivi è stata effettuata la simulazione behavioural e successivamente la simulazione functional e timing post-synthesis, tutte con successo.\\
+
+I risultati rilevanti sono riportati nella sezione \ref{risultati}.
+
+\section{Risultati Sperimentali}
+\label{risultati}
+
+\subsection{Report di Sintesi}
+
+Dal punto di vista dell'area la sintesi riporta il seguente utilizzo dei componenti:
+\begin{itemize}
+\item LUT: 257 (0.19\% del totale)
+\item FF: 127 (0.05\% del totale)
+\end{itemize}
+Si è fatta particolare cautela nella scrittura del codice per evitare utilizzo di Latch.
+
+\subsection{Risultato dei Test Bench}
+
+Lavorando sul testing si è anche provato a variare il periodo di clock, confermando che l'implementazione rispetta le specifiche, funzionando a \SI{100}{\ns}.\\
+
+Si riportano i risultati di tempo legati agli ultimi 2 test riportati nella sezione \ref{test}\\
+
+\begin{tabular}{ll}
+Simulazione 1 immagine 128x128 pixel (Functional Post-Synthesis): & \SI{1721035100}{\ps}\\
+Simulazione 3 immagini 2x2 Pixel senza RESET (Functional Post-Synthesis): & \SI{2755100}{\ps}\\
+Simulazione 3 immagini 2x2 pixel con RESET (Functional Post-Synthesis):& \SI{3205100}{\ps}\\
+\end{tabular}
+
+\bigskip
+Il risultato esprime una variazione del 16\% dal caso senza reset al caso con reset, evidenziando come l'architettura, per scelta progettuale,
+è più efficiente quando non deve fare frequentemente la fase di setup, ossia la fase di reset degli indirizzi di lettura; in qualsiasi dovrà comunque però resettare i segnali ausiliari utilizzati per il calcolo a soglia.
+
+%----------------------------------------------------------------------------------------
+%	SECTION 4
+%----------------------------------------------------------------------------------------
+
+\section{Conclusioni}
+
+Si ritiene che l'architettura progettata rispetti anzitutto le specifiche, fatto che è stato verificato mediante estensivo testing sia casuale, che con test benches
+manualmente scritti. Oltre a ciò l'architettura è stata pensata sulla base di una FSM, evitando l'utilizzo di Latch che avrebbero potuto creare l'instaurarsi di cicli infiniti.
+
+Dal punto di vista del design, si è scelto di utilizzare una unica FSM senza componenti esterni.
+
+%----------------------------------------------------------------------------------------
+
+\end{document}
